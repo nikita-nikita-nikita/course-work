@@ -1,8 +1,11 @@
+function reload() {
+    location.reload();
+}
+
 function saveHighscores(records) {
     const url = "/gethighsores";
 
     async function postData(url = url, data = {}) {
-        // Default options are marked with *
         return await fetch(url, {
             method: 'POST',
             mode: 'cors',
@@ -24,9 +27,12 @@ function saveHighscores(records) {
 }
 
 
-
 const scores = [];
 const names = [];
+let stateFigure = {
+    isRotate: false,
+    canBeRotated: true
+};
 const recordsBlock = createElement({tagName: "div", className: "records"});
 
 function getHighscores() {
@@ -37,6 +43,7 @@ function getHighscores() {
             delete result.highscores[i]._id;
             delete result.highscores[i].__v;
             const {name, score} = result.highscores[i];
+            console.log(result.highscores[i]);
             names.push(name);
             scores.push(score);
             const p = createElement({tagName: "p"});
@@ -66,10 +73,12 @@ function createElement({tagName = "div", className: classList = "", attributes =
     });
     return element;
 }
+
 function showRecords() {
     $("menu").appendChild(recordsBlock);
 
 }
+
 function newGame() {
     $("menu").style.display = "none";
     _("main-game").style.display = "block";
@@ -99,7 +108,6 @@ function newGame() {
     let rotateState = 1;
     let x = 5;
     let y = 15;
-    let canBeRotated = true;
     let score = 0;
     const mainArr = [
         [// Прямая вертикальная палка
@@ -338,9 +346,6 @@ function newGame() {
             }
         }
 
-        function rotate() {
-
-        }
 
         if (e.code === "ArrowRight") {
             getNewState(1)
@@ -348,41 +353,55 @@ function newGame() {
             getNewState(-1)
         } else if (e.code === "ArrowDown") {
             move();
-        } else if (e.code === "KeyD" && canBeRotated) {
-            let newCordsArray;
-            let newFigure;
-            newCordsArray = [...mainArr[currentFigure][rotateState + 2]];
-            newFigure = [
-                getExcelByCoords([+coordinates1[0] + newCordsArray[0][0], +coordinates1[1] + newCordsArray[0][1]]),
-                getExcelByCoords([+coordinates2[0] + newCordsArray[1][0], +coordinates2[1] + newCordsArray[1][1]]),
-                getExcelByCoords([+coordinates3[0] + newCordsArray[2][0], +coordinates3[1] + newCordsArray[2][1]]),
-                getExcelByCoords([+coordinates4[0] + newCordsArray[3][0], +coordinates4[1] + newCordsArray[3][1]]),
-            ];
-            for (let i = 0; i < 4; i++) {
-                if (!newFigure[i] || newFigure[i].classList.contains("set")) {
-                    canBeSwiped = false;
+        } else if (e.code === "KeyD" && stateFigure.canBeRotated) {
+            (async function () {
+                stateFigure.isRotate = true;
+                let newCordsArray;
+                let newFigure;
+                newCordsArray = [...mainArr[currentFigure][rotateState + 2]];
+                for (let i = 0; i < 4; i++) {
+                    if (+coordinates1[0] + newCordsArray[i][0] < 1 || +coordinates1[0] + newCordsArray[i][0] > 10) {
+                        stateFigure.isRotate = false;
+                        return;
+                    }
                 }
-            }
-            if (canBeSwiped) {
-                deleteFigure(bodyOfFigure);
-                bodyOfFigure = newFigure;
-                drawFigure(bodyOfFigure);
-                canBeRotated = false;
-                setTimeout(() => {
-                    canBeRotated = true;
-                }, 300);
-            }
-            if (rotateState < 4) {
-                rotateState++;
-            } else {
-                rotateState = 1
-            }
+                newFigure = [
+                    getExcelByCoords([+coordinates1[0] + newCordsArray[0][0], +coordinates1[1] + newCordsArray[0][1]]),
+                    getExcelByCoords([+coordinates2[0] + newCordsArray[1][0], +coordinates2[1] + newCordsArray[1][1]]),
+                    getExcelByCoords([+coordinates3[0] + newCordsArray[2][0], +coordinates3[1] + newCordsArray[2][1]]),
+                    getExcelByCoords([+coordinates4[0] + newCordsArray[3][0], +coordinates4[1] + newCordsArray[3][1]]),
+                ];
+                for (let i = 0; i < 4; i++) {
+                    if (!newFigure[i] || newFigure[i].classList.contains("set")) {
+                        canBeSwiped = false;
+                    }
+                }
+                if (canBeSwiped) {
+                    await deleteFigure(bodyOfFigure);
+                    bodyOfFigure = newFigure;
+                    await drawFigure(bodyOfFigure);
+                    stateFigure.canBeRotated = false;
+                    setTimeout(() => {
+                        stateFigure.canBeRotated = true;
+                    }, 300);
+                }
+                if (rotateState < 4) {
+                    rotateState++;
+                } else {
+                    rotateState = 1
+                }
+                stateFigure.isRotate = false;
+            }());
         }
     });
 
 
 //move figure with some interval
     function move() {
+        if (stateFigure.isRotate) {
+            move();
+            return;
+        }
         let moveFlag = true;
         let coordinates = getDataFromFigure();
 
@@ -400,69 +419,73 @@ function newGame() {
         } else {
             deleteFigure(bodyOfFigure);
             drawFigure(bodyOfFigure, "set");
-            for (let i = 1; i < 15; i++) {
-                let count = 0;
-                for (let k = 1; k < 11; k++) {
-                    if (document.querySelector(`[posX = "${k}"][posY = "${i}"`).classList.contains("set")) {
-                        count++;
-                        if (count === 10) {
-                            for (let l = 1; l < 11; l++) {
-                                getExcelByCoords([l, i]).classList.remove("set");
-                            }
-                            let set = document.querySelectorAll(".set");
-                            let newSet = [];
-                            for (let l = 0; l < set.length; l++) {
-                                let setCoordinates = [set[l].getAttribute("posX"), set[l].getAttribute("posY")];
-                                if (setCoordinates[1] > i) {
-                                    set[l].classList.remove("set");
-                                    newSet.push(getExcelByCoords([setCoordinates[0], setCoordinates[1] - i]))
+            let wasNoChange = false;
+            do {
+                wasNoChange = false;
+                for (let i = 1; i < 15; i++) {
+                    let count = 0;
+                    for (let k = 1; k < 11; k++) {
+                        if (document.querySelector(`[posX = "${k}"][posY = "${i}"`).classList.contains("set")) {
+                            count++;
+                            if (count === 10) {
+                                wasNoChange = true;
+                                for (let l = 1; l < 11; l++) {
+                                    getExcelByCoords([l, i]).classList.remove("set");
                                 }
+                                let set = document.querySelectorAll(".set");
+                                let newSet = [];
+                                for (let l = 0; l < set.length; l++) {
+                                    let setCoordinates = [+set[l].getAttribute("posX"), +set[l].getAttribute("posY")];
+                                    if (setCoordinates[1] > i) {
+                                        set[l].classList.remove("set");
+                                        newSet.push(getExcelByCoords([setCoordinates[0], setCoordinates[1] - i]))
+                                    }
+                                }
+                                for (let l = 0; l < newSet.length; l++) {
+                                    newSet[l].classList.add("set")
+                                }
+                                i--;
+                                score += 10;
+                                document.querySelector("input").value = `Score:${score}`;
                             }
-                            for (let l = 0; l < newSet.length; l++) {
-                                newSet[l].classList.add("set")
-                            }
-                            i--;
-                            score += 10;
-                            document.querySelector("input").value = `Score:${score}`;
                         }
                     }
                 }
-            }
+            } while (wasNoChange);
+
             for (let i = 1; i < 11; i++) {
                 if (getExcelByCoords([i, 15]).classList.contains("set")) {
                     clearInterval(interval);
-                    alert(`Game ends ${score}`);
+                    alert(`Game ends with score: ${score}`);
                     _("main-game").style.display = "none";
-                    if (score > scores[9] || scores.length!==10) {
+                    if (score > scores[9] || scores.length !== 10) {
                         _("highscores-form").style.display = "block";
                         document.querySelector("form").addEventListener("submit", (e) => {
                             const records = [];
                             let scoresPush = false;
                             for (let k = 0; k < scores.length; k++) {
-                                let obj = {name: "", score: ""};
-                                obj.name = names[k];
-                                obj.score = scores[k];
+                                let obj = {name: names[k], score: scores[k]};
                                 if (scoresPush) {
                                     if (k === 8) {
                                         break;
                                     }
-                                } else {
-                                    if (score > scores[k]) {
-                                        obj.name = document.querySelector("#player-name").value;
-                                        obj.score = score;
-                                        let scoresPush = true;
-                                    }
+                                } else if (score > scores[k] && !scoresPush) {
+                                    obj.name = document.querySelector("#player-name").value;
+                                    obj.score = score;
+                                    k--;
+                                    scoresPush = true;
                                 }
                                 records.push(obj)
                             }
-                            if (records.length !== 100) {
+                            if (records.length !== 10 && !scoresPush) {
                                 let obj = {name: "", score: ""};
                                 obj.name = document.querySelector("#player-name").value;
                                 obj.score = score;
                                 records.push(obj);
                             }
+
                             saveHighscores({highscores: records});
-                            console.log(records);
+
                         });
 
                     }
@@ -473,7 +496,7 @@ function newGame() {
         }
     }
 
-//Create figure
+//Создание фигуры
     function createFigure(figure/* индекс элемента в масиве*/ = getRandomFigure()) {
         rotateState = 1;
         currentFigure = figure;
@@ -489,8 +512,6 @@ function newGame() {
         return Math.round(Math.random() * (mainArr.length - 1));
     }
 
-
-//Create figure
 
 //draw and delete
     function drawFigure(figure, constant = "figure") {

@@ -13,7 +13,7 @@ async function start() {
             console.log("server running port: " + port)
         });
     }catch (e) {
-        console.log("I am fkin mistake", e);
+        console.log(e);
     }
 }
 const highscores = new Schema({
@@ -30,8 +30,15 @@ app.get("/highscores", async (req, res) => {
     res.send({highscores:result});
 });
 
-app.post("/gethighsores",async ({body:{highscores}}, res) => {
+app.post("/gethighsores",async ({body:{highscores}}) => {
     const result = await HighScores.find({});
+    for (let i = 0; i < result.length; i++) {
+        await HighScores.remove({_id: result[i]._id}, (error)=>{
+            if(error){
+                console.log(error);
+            }
+        });
+    }
     console.log(highscores);
     try {
         for (let i = 0; i < highscores.length; i++) {
@@ -39,15 +46,9 @@ app.post("/gethighsores",async ({body:{highscores}}, res) => {
                 name:highscores[i].name,
                 score: highscores[i].score
             });
-            record.save();
+            await record.save();
         }
-        for (let i = 0; i < result.length; i++) {
-            HighScores.remove({_id: result[i]._id}, (error)=>{
-                if(error){
-                    console.log(error);
-                }
-            });
-        }
+
     }catch (error) {
         console.log(error)
     }
