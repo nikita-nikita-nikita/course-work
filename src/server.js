@@ -4,7 +4,7 @@ const path = require("path");
 const mongoose = require("mongoose");
 const {Schema, model} = require("mongoose");
 const app = express();
-const urlMDB = "mongodb+srv://Nikita:fx98gu90@highscores-lxbtb.mongodb.net/highscores";
+const urlMDB = process.env.MONGODB_URL||"mongodb+srv://Nikita:fx98gu90@highscores-lxbtb.mongodb.net/highscores";
 const port = process.env.PORT||3000;
 async function start() {
     try {
