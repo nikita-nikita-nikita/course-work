@@ -43,7 +43,6 @@ function getHighscores() {
             delete result.highscores[i]._id;
             delete result.highscores[i].__v;
             const {name, score} = result.highscores[i];
-            console.log(result.highscores[i]);
             names.push(name);
             scores.push(score);
             const p = createElement({tagName: "p"});
@@ -109,7 +108,7 @@ function newGame() {
     let x = 5;
     let y = 15;
     let score = 0;
-    const mainArr = [
+    const figuresArr = [
         [// Прямая вертикальная палка
             [0, 1],
             [0, 2],
@@ -358,7 +357,7 @@ function newGame() {
                 stateFigure.isRotate = true;
                 let newCordsArray;
                 let newFigure;
-                newCordsArray = [...mainArr[currentFigure][rotateState + 2]];
+                newCordsArray = [...figuresArr[currentFigure][rotateState + 2]];
                 for (let i = 0; i < 4; i++) {
                     if (+coordinates1[0] + newCordsArray[i][0] < 1 || +coordinates1[0] + newCordsArray[i][0] > 10) {
                         stateFigure.isRotate = false;
@@ -501,7 +500,7 @@ function newGame() {
         rotateState = 1;
         currentFigure = figure;
         bodyOfFigure = [
-            ...getFigureByCoordinates([[x, y], [x + mainArr[currentFigure][0][0], y + mainArr[currentFigure][0][1]], [x + mainArr[currentFigure][1][0], y + mainArr[currentFigure][1][1]], [x + mainArr[currentFigure][2][0], y + mainArr[currentFigure][2][1]]])
+            ...getFigureByCoordinates([[x, y], [x + figuresArr[currentFigure][0][0], y + figuresArr[currentFigure][0][1]], [x + figuresArr[currentFigure][1][0], y + figuresArr[currentFigure][1][1]], [x + figuresArr[currentFigure][2][0], y + figuresArr[currentFigure][2][1]]])
         ];
         for (let i = 0; i < 4; i++) {
             bodyOfFigure[i].classList.add("figure");
@@ -509,7 +508,7 @@ function newGame() {
     }
 
     function getRandomFigure() {
-        return Math.round(Math.random() * (mainArr.length - 1));
+        return Math.round(Math.random() * (figuresArr.length - 1));
     }
 
 
